@@ -29,13 +29,13 @@ async def _safe_snapshot(camera: dict, **kwargs) -> tuple[str, bytes | Exception
 @router.get(
     "/{camera_id}",
     responses={200: {"content": {"image/jpeg": {}}}},
-    summary="Scarica un frame da una telecamera",
+    summary="Download a frame from a camera",
 )
 async def get_frame(
     camera_id: str,
     at: Optional[datetime] = Query(
         None,
-        description="UTC datetime per frame storico (ISO 8601). Default: snapshot live.",
+        description="UTC datetime for historical frame (ISO 8601). Default: live snapshot.",
     ),
     resolution: Optional[str] = Query(None),
     compression: Optional[int] = Query(None, ge=0, le=100),
@@ -83,7 +83,7 @@ async def get_frame(
 @router.get(
     "",
     responses={200: {"content": {"application/zip": {}}}},
-    summary="Scarica un frame da tutte le telecamere (ZIP)",
+    summary="Download a frame from all cameras (ZIP)",
 )
 async def get_all_frames(
     resolution: Optional[str] = Query(None),

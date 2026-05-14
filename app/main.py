@@ -7,9 +7,9 @@ app = FastAPI(
     title="VisionAPISmart",
     description=(
         "Semantic API layer for Axis camera systems. "
-        "Acquires snapshots via VAPIX and analyzes them with an AI vision model.\n\n"
+        "Acquires frames via VAPIX and analyzes them with an AI vision model.\n\n"
         "**Authentication:**\n"
-        "- `X-API-Key` — read-only access (analyze, frame, catalogs)\n"
+        "- `X-API-Key` — read access (analyze, frame, catalog listing)\n"
         "- `X-Admin-Key` — admin access (CRUD on cameras, actions, sequences)"
     ),
     version="1.0.0",
@@ -41,13 +41,13 @@ def custom_openapi():
             "type": "apiKey",
             "in": "header",
             "name": "X-API-Key",
-            "description": "Chiave di lettura — accesso a analyze, frame, GET cataloghi",
+            "description": "Read key — access to analyze, frame, catalog listing",
         },
         "AdminKey": {
             "type": "apiKey",
             "in": "header",
             "name": "X-Admin-Key",
-            "description": "Chiave amministratore — CRUD su cameras, actions, sequences",
+            "description": "Admin key — CRUD on cameras, actions, sequences",
         },
     }
 

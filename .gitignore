@@ -20,3 +20,4 @@ frame/
 *.swp
 *~
 *.md
+!README.md

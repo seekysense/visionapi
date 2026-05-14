@@ -55,7 +55,7 @@ def _to_entry(body: CameraIn) -> dict:
     return {k: v for k, v in body.model_dump().items() if v is not None}
 
 
-@router.get("", response_model=list[CameraOut], summary="Elenco telecamere configurate")
+@router.get("", response_model=list[CameraOut], summary="List configured cameras")
 async def list_cameras(_: str = Depends(require_api_key)):
     return [_to_out(c) for c in load_cameras()]
 
@@ -64,7 +64,7 @@ async def list_cameras(_: str = Depends(require_api_key)):
     "",
     status_code=status.HTTP_201_CREATED,
     response_model=CameraOut,
-    summary="Aggiungi nuova telecamera",
+    summary="Add new camera",
 )
 async def create_camera(body: CameraIn, _: str = Depends(require_admin_key)):
     cameras = load_cameras()
@@ -79,7 +79,7 @@ async def create_camera(body: CameraIn, _: str = Depends(require_admin_key)):
 @router.put(
     "/{camera_id}",
     response_model=CameraOut,
-    summary="Aggiorna telecamera esistente",
+    summary="Update existing camera",
 )
 async def update_camera(camera_id: str, body: CameraIn, _: str = Depends(require_admin_key)):
     cameras = load_cameras()
@@ -92,7 +92,7 @@ async def update_camera(camera_id: str, body: CameraIn, _: str = Depends(require
     raise HTTPException(status.HTTP_404_NOT_FOUND, detail=f"Camera '{camera_id}' not found")
 
 
-@router.delete("/{camera_id}", status_code=status.HTTP_204_NO_CONTENT, summary="Rimuovi telecamera")
+@router.delete("/{camera_id}", status_code=status.HTTP_204_NO_CONTENT, summary="Remove camera")
 async def delete_camera(camera_id: str, _: str = Depends(require_admin_key)):
     cameras = load_cameras()
     new_list = [c for c in cameras if c["id"] != camera_id]

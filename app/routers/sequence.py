@@ -99,7 +99,7 @@ def _seq_out(entry: dict) -> SequenceOut:
 
 # ── CRUD sequences ─────────────────────────────────────────────────────────────
 
-@router.get("", response_model=list[SequenceOut], summary="Elenco sequenze configurate")
+@router.get("", response_model=list[SequenceOut], summary="List configured sequences")
 async def list_sequences(_: str = Depends(require_api_key)):
     return [_seq_out(s) for s in load_sequences()]
 
@@ -108,7 +108,7 @@ async def list_sequences(_: str = Depends(require_api_key)):
     "",
     status_code=status.HTTP_201_CREATED,
     response_model=SequenceOut,
-    summary="Crea nuova sequenza",
+    summary="Create new sequence",
 )
 async def create_sequence(body: SequenceIn, _: str = Depends(require_admin_key)):
     sequences = load_sequences()
@@ -120,7 +120,7 @@ async def create_sequence(body: SequenceIn, _: str = Depends(require_admin_key))
     return _seq_out(entry)
 
 
-@router.put("/{sequence_id}", response_model=SequenceOut, summary="Aggiorna sequenza esistente")
+@router.put("/{sequence_id}", response_model=SequenceOut, summary="Update existing sequence")
 async def update_sequence(sequence_id: str, body: SequenceIn, _: str = Depends(require_admin_key)):
     sequences = load_sequences()
     for i, s in enumerate(sequences):
@@ -132,7 +132,7 @@ async def update_sequence(sequence_id: str, body: SequenceIn, _: str = Depends(r
     raise HTTPException(status.HTTP_404_NOT_FOUND, detail=f"Sequence '{sequence_id}' not found")
 
 
-@router.delete("/{sequence_id}", status_code=status.HTTP_204_NO_CONTENT, summary="Elimina sequenza")
+@router.delete("/{sequence_id}", status_code=status.HTTP_204_NO_CONTENT, summary="Delete sequence")
 async def delete_sequence(sequence_id: str, _: str = Depends(require_admin_key)):
     sequences = load_sequences()
     new_list = [s for s in sequences if s["id"] != sequence_id]
@@ -146,15 +146,15 @@ async def delete_sequence(sequence_id: str, _: str = Depends(require_admin_key))
 @router.post(
     "/{camera_id}/{sequence_id}",
     response_model=SequenceResponse,
-    summary="Esegui analisi sequenza su una telecamera",
+    summary="Run sequence analysis on a camera",
 )
 async def run_sequence(
     camera_id: str,
     sequence_id: str,
     at: Optional[datetime] = Query(
         None,
-        description="UTC datetime del momento target (ISO 8601). "
-                    "Se assente: live capture per l'intera finestra temporale.",
+        description="UTC datetime of the target moment (ISO 8601). "
+                    "If omitted: live capture over the full time window.",
     ),
     resolution: Optional[str] = Query(None),
     compression: Optional[int] = Query(None, ge=0, le=100),

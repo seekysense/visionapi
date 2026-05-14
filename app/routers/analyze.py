@@ -44,29 +44,29 @@ def _find(items: list[dict], item_id: str, kind: str) -> dict:
 @router.post(
     "/{camera_id}/{action_id}",
     response_model=AnalyzeResponse,
-    summary="Analizza frame dalla telecamera con l'azione indicata",
+    summary="Analyze a camera frame with the specified action",
 )
 async def analyze_camera(
     camera_id: str,
     action_id: str,
     mode: Literal["snapshot", "sequence"] = Query(
         "snapshot",
-        description="snapshot = 1 frame; sequence = 4 frame @ 1 fps",
+        description="snapshot = single frame; sequence = 4 frames @ 1 fps",
     ),
     at: Optional[datetime] = Query(
         None,
-        description="UTC datetime per recupero clip storica (ISO 8601, es. 2024-01-15T10:30:00Z). "
-                    "Default: snapshot live.",
+        description="UTC datetime for historical clip retrieval (ISO 8601, e.g. 2024-01-15T10:30:00Z). "
+                    "Default: live snapshot.",
     ),
     resolution: Optional[str] = Query(
         None,
-        description="Sovrascrive la risoluzione della telecamera (es. 640x480)",
+        description="Override camera resolution (e.g. 640x480)",
     ),
     compression: Optional[int] = Query(
         None,
         ge=0,
         le=100,
-        description="Sovrascrive la compressione JPEG 0–100",
+        description="Override JPEG compression 0–100",
     ),
     _: str = Depends(require_api_key),
 ):

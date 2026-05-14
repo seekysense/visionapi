@@ -27,7 +27,7 @@ class ActionIn(BaseModel):
         return self
 
 
-@router.get("", response_model=list[ActionOut], summary="Catalogo azioni disponibili")
+@router.get("", response_model=list[ActionOut], summary="List available actions")
 async def list_actions(_: str = Depends(require_api_key)):
     return [ActionOut(id=a["id"], label=a["label"]) for a in load_actions()]
 
@@ -36,7 +36,7 @@ async def list_actions(_: str = Depends(require_api_key)):
     "",
     status_code=status.HTTP_201_CREATED,
     response_model=ActionOut,
-    summary="Aggiungi nuova azione al catalogo",
+    summary="Add new action",
 )
 async def create_action(body: ActionIn, _: str = Depends(require_admin_key)):
     actions = load_actions()
@@ -50,7 +50,7 @@ async def create_action(body: ActionIn, _: str = Depends(require_admin_key)):
 @router.put(
     "/{action_id}",
     response_model=ActionOut,
-    summary="Aggiorna un'azione esistente",
+    summary="Update existing action",
 )
 async def update_action(action_id: str, body: ActionIn, _: str = Depends(require_admin_key)):
     actions = load_actions()
@@ -62,7 +62,7 @@ async def update_action(action_id: str, body: ActionIn, _: str = Depends(require
     raise HTTPException(status.HTTP_404_NOT_FOUND, detail=f"Action '{action_id}' not found")
 
 
-@router.delete("/{action_id}", status_code=status.HTTP_204_NO_CONTENT, summary="Rimuovi azione dal catalogo")
+@router.delete("/{action_id}", status_code=status.HTTP_204_NO_CONTENT, summary="Remove action")
 async def delete_action(action_id: str, _: str = Depends(require_admin_key)):
     actions = load_actions()
     new_list = [a for a in actions if a["id"] != action_id]
