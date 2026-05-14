@@ -189,20 +189,30 @@ def _run_ffmpeg_extract(
     duration_s: float,
     target_fps: float,
     output_dir: Path,
+    target_resolution: Optional[str] = None,
 ) -> list[Path]:
-    """Extracts frames from an MP4 at target_fps using ffmpeg (system binary)."""
+    """Extracts frames from an MP4 at target_fps using ffmpeg (system binary).
+
+    target_resolution (e.g. "1280x720") scales the output so ROI coordinates
+    defined for the camera's snapshot resolution remain valid on recording frames.
+    """
     ffmpeg = shutil.which("ffmpeg")
     if not ffmpeg:
         raise RuntimeError(
             "ffmpeg not found in PATH — install with: apt-get install -y ffmpeg"
         )
 
+    vf = f"fps={target_fps}"
+    if target_resolution:
+        w, h = target_resolution.split("x")
+        vf += f",scale={w}:{h}"
+
     pattern = str(output_dir / "frame_%04d.jpg")
     cmd = [
         ffmpeg, "-y",
         "-t", str(duration_s),
         "-i", str(mp4_path),
-        "-vf", f"fps={target_fps}",
+        "-vf", vf,
         "-q:v", "2",
         pattern,
     ]
@@ -230,12 +240,14 @@ async def fetch_recording_frame(camera: dict, at: datetime) -> bytes:
     stop = at + window
     duration_s = (stop - start).total_seconds()
 
+    cam_resolution = camera.get("resolution", "1280x720")
+
     with tempfile.TemporaryDirectory() as tmpdir:
         tmp_path = Path(tmpdir)
         mp4_file = tmp_path / "clip.mp4"
         await _download_mp4(camera, rec["id"], rec["disk_id"], start, stop, mp4_file)
 
-        frame_paths = _run_ffmpeg_extract(mp4_file, duration_s, 1.0, tmp_path)
+        frame_paths = _run_ffmpeg_extract(mp4_file, duration_s, 1.0, tmp_path, cam_resolution)
         if not frame_paths:
             raise ValueError(f"No frames extracted from recording at {_vapix_ts(at)}")
 
@@ -276,13 +288,16 @@ async def fetch_mjpeg_frames(
     start = at - timedelta(seconds=window_before_s)
     stop = at + timedelta(seconds=window_after_s)
     total_duration_s = window_before_s + window_after_s
+    cam_resolution = camera.get("resolution", "1280x720")
 
     with tempfile.TemporaryDirectory() as tmpdir:
         tmp_path = Path(tmpdir)
         mp4_file = tmp_path / "clip.mp4"
         await _download_mp4(camera, rec["id"], rec["disk_id"], start, stop, mp4_file)
 
-        frame_paths = _run_ffmpeg_extract(mp4_file, total_duration_s, target_fps, tmp_path)
+        frame_paths = _run_ffmpeg_extract(
+            mp4_file, total_duration_s, target_fps, tmp_path, cam_resolution
+        )
         if not frame_paths:
             raise ValueError(
                 f"No frames extracted from recording {_vapix_ts(start)}–{_vapix_ts(stop)}"

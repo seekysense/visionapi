@@ -35,18 +35,20 @@ def custom_openapi():
         routes=app.routes,
     )
 
-    schema.setdefault("components", {}).setdefault("securitySchemes", {})
-    schema["components"]["securitySchemes"]["ReaderKey"] = {
-        "type": "apiKey",
-        "in": "header",
-        "name": "X-API-Key",
-        "description": "Chiave di lettura — accesso a analyze, frame, GET cataloghi",
-    }
-    schema["components"]["securitySchemes"]["AdminKey"] = {
-        "type": "apiKey",
-        "in": "header",
-        "name": "X-Admin-Key",
-        "description": "Chiave amministratore — CRUD su cameras, actions, sequences",
+    schema.setdefault("components", {})
+    schema["components"]["securitySchemes"] = {
+        "ReaderKey": {
+            "type": "apiKey",
+            "in": "header",
+            "name": "X-API-Key",
+            "description": "Chiave di lettura — accesso a analyze, frame, GET cataloghi",
+        },
+        "AdminKey": {
+            "type": "apiKey",
+            "in": "header",
+            "name": "X-Admin-Key",
+            "description": "Chiave amministratore — CRUD su cameras, actions, sequences",
+        },
     }
 
     app.openapi_schema = schema
