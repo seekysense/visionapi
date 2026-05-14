@@ -189,6 +189,65 @@ curl -s -H "X-API-Key: $KEY" http://localhost:8000/actions | jq .
 
 ---
 
+## Built-in sequences
+
+Sequences run a **3-phase pipeline**:
+
+1. **Frame collection** — download the H.264 clip (or capture live frames) for the configured time window
+2. **Chunk analysis** — split frames into groups of `frames_per_chunk`, send each group to the LLM with the `chunk_prompt`
+3. **Final synthesis** — send all chunk results (text only) to the LLM with the `final_prompt` for a consolidated verdict
+
+Each sequence is fully configurable via API (`POST /sequence`). The parameters that control the pipeline:
+
+| Parameter | Description |
+|---|---|
+| `fps` | Frames per second to extract from the recording |
+| `window_before_s` | Seconds of footage before the target timestamp |
+| `window_after_s` | Seconds of footage after the target timestamp |
+| `frames_per_chunk` | Number of frames per LLM call in phase 2 |
+| `chunk_prompt` | Prompt template for chunk analysis; supports `{chunk_index}` and `{total_chunks}` |
+| `final_prompt` | Prompt template for synthesis; supports `{chunk_results}` and `{batch_duration_s}` |
+
+### `cabinet_access_detection` — Cabinet Access & Item Removal Detection
+
+Detects whether someone opened a display cabinet and interacted with its contents during a 30-second window around the target moment.
+
+| Parameter | Value |
+|---|---|
+| Window | −15 s / +15 s around target timestamp |
+| FPS | 2 (60 frames total over 30 s) |
+| Frames per chunk | 8 (→ 8 LLM calls in phase 2) |
+
+**Chunk output** (one per 4-second batch):
+```json
+{
+  "door_open": "yes" | "no",
+  "hand_visible": "yes" | "no",
+  "item_interaction": "yes" | "no",
+  "confidence": 0.0–1.0,
+  "notes": "brief observation"
+}
+```
+
+**Final verdict** (synthesis across all chunks):
+```json
+{
+  "cabinet_accessed": true | false,
+  "item_taken": true | false,
+  "hand_visible": true | false,
+  "confidence": 0.0–1.0,
+  "evidence": "triggering batch and key observations",
+  "verdict": "CLEAR" | "SUSPICIOUS" | "CONFIRMED_ACCESS"
+}
+```
+
+**Verdict rules** (false-positive bias — a missed access is worse than a false alarm):
+- `CONFIRMED_ACCESS` — at least one chunk has `door_open=yes` + `hand_visible=yes` + `item_interaction=yes`
+- `SUSPICIOUS` — at least one chunk has `door_open=yes` + `hand_visible=yes` (item interaction unconfirmed)
+- `CLEAR` — no chunk combines an open door with a visible hand
+
+---
+
 ## Built-in actions
 
 | ID | Description | Key output fields |

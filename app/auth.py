@@ -3,8 +3,8 @@ from fastapi.security.api_key import APIKeyHeader
 
 from app.config import get_settings
 
-_reader_header = APIKeyHeader(name="X-API-Key", auto_error=False)
-_admin_header  = APIKeyHeader(name="X-Admin-Key", auto_error=False)
+_reader_header = APIKeyHeader(name="X-API-Key", auto_error=False, scheme_name="ReaderKey")
+_admin_header  = APIKeyHeader(name="X-Admin-Key", auto_error=False, scheme_name="AdminKey")
 
 
 async def require_api_key(key: str = Security(_reader_header)) -> str:
