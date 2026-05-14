@@ -37,12 +37,3 @@ sequences:
     confidence: float
     evidence: string
     verdict: string
-- id: step6_test_seq
-  label: Test Seq
-  fps: 1.0
-  window_before_s: 5
-  window_after_s: 5
-  frames_per_chunk: 4
-  chunk_prompt: Analyze these frames.
-  final_prompt: 'Summarize: {chunk_results}'
-  output_type: json
