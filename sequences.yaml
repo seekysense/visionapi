@@ -1,0 +1,42 @@
+sequences:
+- id: cabinet_access_detection
+  label: Cabinet Access & Item Removal Detection
+  fps: 2
+  window_before_s: 15
+  window_after_s: 15
+  frames_per_chunk: 8
+  output_type: json
+  chunk_prompt: "You are analyzing a batch of sequential frames from a security camera\n\
+    monitoring a display cabinet. The frames are in chronological order.\n[Batch {chunk_index}\
+    \ of {total_chunks}]\n\nDetermine for this batch:\n1. Is the cabinet door/panel\
+    \ open in any frame?\n2. Is a person's hand visible reaching into or near the\
+    \ cabinet interior?\n3. Is any item being removed from or placed into the cabinet?\n\
+    \nReturn ONLY a raw JSON object with these exact keys:\n{\n  \"door_open\": \"\
+    yes\" or \"no\",\n  \"hand_visible\": \"yes\" or \"no\",\n  \"item_interaction\"\
+    : \"yes\" or \"no\",\n  \"confidence\": <float 0.0-1.0>,\n  \"notes\": \"<brief\
+    \ observation, max 1 sentence>\"\n}\n"
+  final_prompt: "You are given the analysis results from multiple sequential frame\
+    \ batches\ncovering a 30-second window around a specific moment in time.\nEach\
+    \ batch covers approximately {batch_duration_s} seconds of footage.\n\nBatch results\
+    \ (JSON array, chronological order):\n{chunk_results}\n\nBased on ALL evidence,\
+    \ make a definitive final determination.\n\nReturn ONLY a raw JSON object:\n{\n\
+    \  \"cabinet_accessed\": true or false,\n  \"item_taken\": true or false,\n  \"\
+    hand_visible\": true or false,\n  \"confidence\": <float 0.0-1.0>,\n  \"evidence\"\
+    : \"<summary of key observations across all batches>\",\n  \"verdict\": \"CLEAR\"\
+    \ or \"SUSPICIOUS\" or \"CONFIRMED_ACCESS\"\n}\n"
+  output_schema:
+    cabinet_accessed: boolean
+    item_taken: boolean
+    hand_visible: boolean
+    confidence: float
+    evidence: string
+    verdict: string
+- id: step6_test_seq
+  label: Test Seq
+  fps: 1.0
+  window_before_s: 5
+  window_after_s: 5
+  frames_per_chunk: 4
+  chunk_prompt: Analyze these frames.
+  final_prompt: 'Summarize: {chunk_results}'
+  output_type: json

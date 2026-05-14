@@ -1,0 +1,489 @@
+actions:
+- id: people_count
+  label: People Counting
+  prompt_single: 'Analyze the provided image and count the number of people present.
+
+
+    Return your response strictly as a single JSON object with the following keys:
+
+
+    - "number": (integer) The total count of people detected.
+
+
+    - "confidence": (float between 0 and 1) Your confidence level in the count.
+
+
+    - "describe": (string) A concise description of the people focusing exclusively
+
+    on non-sensitive attributes such as clothing (e.g., ''blue jacket'', ''white t-shirt'')
+
+    and accessories (e.g., ''backpack'', ''suitcase'', ''umbrella'').
+
+
+
+    STRICT PROHIBITIONS:
+
+
+    - DO NOT mention gender, age, ethnicity, or any physical characteristics (e.g.,
+
+    hair color, height, body shape).
+
+
+    - DO NOT include any text, explanations, or markdown formatting outside of the
+
+    JSON block.
+
+
+    - Output ONLY the raw JSON.
+
+
+
+    Example of allowed description: ''Five individuals wearing winter coats, two holding
+
+    black suitcases and one carrying a backpack.''
+
+    '
+  prompt_sequence: 'Analyze the provided image and count the number of people present.
+
+
+    Return your response strictly as a single JSON object with the following keys:
+
+
+    - "number": (integer) The total count of people detected.
+
+
+    - "confidence": (float between 0 and 1) Your confidence level in the count.
+
+
+    - "describe": (string) A concise description of the people focusing exclusively
+
+    on non-sensitive attributes such as clothing (e.g., ''blue jacket'', ''white t-shirt'')
+
+    and accessories (e.g., ''backpack'', ''suitcase'', ''umbrella'').
+
+
+
+    STRICT PROHIBITIONS:
+
+
+    - DO NOT mention gender, age, ethnicity, or any physical characteristics (e.g.,
+
+    hair color, height, body shape).
+
+
+    - DO NOT include any text, explanations, or markdown formatting outside of the
+
+    JSON block.
+
+
+    - Output ONLY the raw JSON.
+
+
+
+    Example of allowed description: ''Five individuals wearing winter coats, two holding
+
+    black suitcases and one carrying a backpack.''
+
+    '
+- id: vehicle_count
+  label: Vehicle Counting
+  prompt_single: 'Analyze the provided image of the parking area. Count the total
+
+    number of cars and trucks combined.
+
+
+    Return your response strictly as a single JSON object with the following keys:
+
+
+    - "number": (integer) The total count of cars and trucks only.
+
+
+    - "confidence": (float between 0 and 1) Your confidence level in the count.
+
+
+    - "describe": (string) A comprehensive list of ALL vehicles identified in the
+
+    scene, including cars, trucks, bicycles, motorcycles, mopeds, and e-scooters.
+
+    Describe them by color or type (e.g., ''three red cars, two delivery trucks, and
+
+    one electric scooter near the entrance'').
+
+
+
+    STRICT PROHIBITIONS:
+
+
+    - DO NOT include any text, explanations, or markdown formatting outside of the
+
+    JSON block.
+
+
+    - Output ONLY the raw JSON.
+
+
+    - Focus the count only on cars and trucks, but include all other vehicle types
+
+    in the description.
+
+    '
+  prompt_sequence: 'Analyze the provided image of the parking area. Count the total
+
+    number of cars and trucks combined.
+
+
+    Return your response strictly as a single JSON object with the following keys:
+
+
+    - "number": (integer) The total count of cars and trucks only.
+
+
+    - "confidence": (float between 0 and 1) Your confidence level in the count.
+
+
+    - "describe": (string) A comprehensive list of ALL vehicles identified in the
+
+    scene, including cars, trucks, bicycles, motorcycles, mopeds, and e-scooters.
+
+    Describe them by color or type (e.g., ''three red cars, two delivery trucks, and
+
+    one electric scooter near the entrance'').
+
+
+
+    STRICT PROHIBITIONS:
+
+
+    - DO NOT include any text, explanations, or markdown formatting outside of the
+
+    JSON block.
+
+
+    - Output ONLY the raw JSON.
+
+
+    - Focus the count only on cars and trucks, but include all other vehicle types
+
+    in the description.
+
+    '
+- id: patio_check
+  label: Verify Patio Objects
+  prompt_single: "Analyze the provided image of the outdoor patio. Focus exclusively\
+    \ on the light\ngreen metal dining table and the chairs, along with the immediate\
+    \ gravel area\nsurrounding them.\n\nYour task is to determine if any items such\
+    \ as bottles, glasses, crockery, or\nother tableware (abandoned or forgotten)\
+    \ are present on the table surface or\nthe ground nearby.\n\nSTRICT OUTPUT RULES:\n\
+    - Return your response strictly as a single, raw JSON object.\n- DO NOT include\
+    \ any text, explanations, or markdown formatting outside of the JSON block.\n\
+    - The JSON keys must be exactly: 'detected', 'confidence', 'describe'.\n\nFIELD\
+    \ DEFINITIONS:\n- \"detected\": (boolean) true if any bottles, glasses, tableware,\
+    \ or crockery are found. false otherwise.\n- \"confidence\": (float between 0\
+    \ and 1) your confidence level in the detection (or lack thereof).\n- \"describe\"\
+    : (string) a detailed description of all items found on the table surface and\n\
+    the immediate gravel area. If no target items are present, the description must\
+    \ state that\nthe area is clear.\n\nEXAMPLE OUTPUTS:\n- (If a bottle and a glass\
+    \ are found on the table):\n  {\n    \"detected\": true,\n    \"confidence\":\
+    \ 0.95,\n    \"describe\": \"A clear glass bottle and one drinking glass are visible\
+    \ on the center of the table.\"\n  }\n- (If nothing is found):\n  {\n    \"detected\"\
+    : false,\n    \"confidence\": 0.99,\n    \"describe\": \"The light green metal\
+    \ dining table and the immediate gravel patio area are completely clear of bottles,\
+    \ glasses, tableware, or other abandoned items.\"\n  }\n"
+  prompt_sequence: "Analyze the provided image of the outdoor patio. Focus exclusively\
+    \ on the light\ngreen metal dining table and the chairs, along with the immediate\
+    \ gravel area\nsurrounding them.\n\nYour task is to determine if any items such\
+    \ as bottles, glasses, crockery, or\nother tableware (abandoned or forgotten)\
+    \ are present on the table surface or\nthe ground nearby.\n\nSTRICT OUTPUT RULES:\n\
+    - Return your response strictly as a single, raw JSON object.\n- DO NOT include\
+    \ any text, explanations, or markdown formatting outside of the JSON block.\n\
+    - The JSON keys must be exactly: 'detected', 'confidence', 'describe'.\n\nFIELD\
+    \ DEFINITIONS:\n- \"detected\": (boolean) true if any bottles, glasses, tableware,\
+    \ or crockery are found. false otherwise.\n- \"confidence\": (float between 0\
+    \ and 1) your confidence level in the detection (or lack thereof).\n- \"describe\"\
+    : (string) a detailed description of all items found on the table surface and\n\
+    the immediate gravel area. If no target items are present, the description must\
+    \ state that\nthe area is clear.\n\nEXAMPLE OUTPUTS:\n- (If a bottle and a glass\
+    \ are found on the table):\n  {\n    \"detected\": true,\n    \"confidence\":\
+    \ 0.95,\n    \"describe\": \"A clear glass bottle and one drinking glass are visible\
+    \ on the center of the table.\"\n  }\n- (If nothing is found):\n  {\n    \"detected\"\
+    : false,\n    \"confidence\": 0.99,\n    \"describe\": \"The light green metal\
+    \ dining table and the immediate gravel patio area are completely clear of bottles,\
+    \ glasses, tableware, or other abandoned items.\"\n  }\n"
+- id: cleaning_detection
+  label: Cleaning Equipment & Activity Detection
+  prompt_single: 'Analyze the provided indoor image to detect cleaning activities
+    or the presence
+
+    of cleaning equipment.
+
+
+    Return your response strictly as a single JSON object with the following keys:
+
+
+    - "cleaning_detected": (boolean) true if cleaning tools or activities are visible,
+
+    false otherwise.
+
+
+    - "confidence": (float between 0 and 1) Your confidence level based on the visibility
+
+    of specific tools.
+
+
+    - "tools_found": (array of strings) List the specific items detected (e.g., ''mop'',
+
+    ''cleaning cart'', ''spray bottle'', ''broom'', ''wet floor sign'', ''microfiber
+    cloth'').
+
+
+    - "describe": (string) A concise description of the cleaning setup, focusing exclusively
+
+    on the equipment and its placement within the area.
+
+
+
+    STRICT PROHIBITIONS:
+
+
+    - DO NOT mention the identity, gender, age, or physical characteristics of any
+
+    people present.
+
+
+    - DO NOT include any text, explanations, or markdown formatting outside of the
+
+    JSON block.
+
+
+    - Output ONLY the raw JSON.
+
+
+
+    Example of allowed description: ''A yellow cleaning cart equipped with multiple
+
+    spray bottles and a mop bucket, positioned next to a wet floor sign.''
+
+    '
+  prompt_sequence: 'Analyze the provided indoor image to detect cleaning activities
+    or the presence
+
+    of cleaning equipment.
+
+
+    Return your response strictly as a single JSON object with the following keys:
+
+
+    - "cleaning_detected": (boolean) true if cleaning tools or activities are visible,
+
+    false otherwise.
+
+
+    - "confidence": (float between 0 and 1) Your confidence level based on the visibility
+
+    of specific tools.
+
+
+    - "tools_found": (array of strings) List the specific items detected (e.g., ''mop'',
+
+    ''cleaning cart'', ''spray bottle'', ''broom'', ''wet floor sign'', ''microfiber
+    cloth'').
+
+
+    - "describe": (string) A concise description of the cleaning setup, focusing exclusively
+
+    on the equipment and its placement within the area.
+
+
+
+    STRICT PROHIBITIONS:
+
+
+    - DO NOT mention the identity, gender, age, or physical characteristics of any
+
+    people present.
+
+
+    - DO NOT include any text, explanations, or markdown formatting outside of the
+
+    JSON block.
+
+
+    - Output ONLY the raw JSON.
+
+
+
+    Example of allowed description: ''A yellow cleaning cart equipped with multiple
+
+    spray bottles and a mop bucket, positioned next to a wet floor sign.''
+
+    '
+- id: outdoor_maintenance_detection
+  label: Outdoor Maintenance & Cleaning Detection
+  prompt_single: 'Analyze the provided outdoor image (parking lot, garden, or patio)
+    to detect
+
+    cleaning or maintenance activities.
+
+
+    Return your response strictly as a single JSON object with the following keys:
+
+
+    - "activity_detected": (boolean) true if maintenance tools, cleaning equipment,
+
+    or active landscaping tasks are visible, false otherwise.
+
+
+    - "confidence": (float between 0 and 1) Your confidence level in the detection.
+
+
+    - "tools_found": (array of strings) List the specific items detected (e.g., ''leaf
+
+    blower'', ''pressure washer'', ''lawnmower'', ''rake'', ''industrial broom'',
+    ''hedge trimmer'',
+
+    ''maintenance cart'', ''traffic cones'').
+
+
+    - "describe": (string) A concise description of the activity, focusing exclusively
+
+    on the tools, equipment, and the state of the outdoor area.
+
+
+
+    STRICT PROHIBITIONS:
+
+
+    - DO NOT mention the identity, gender, age, ethnicity, or physical characteristics
+
+    of any individuals.
+
+
+    - DO NOT include any text, explanations, or markdown formatting outside of the
+
+    JSON block.
+
+
+    - Output ONLY the raw JSON.
+
+
+
+    Example of allowed description: ''A worker-operated leaf blower clearing a paved
+
+    parking area, with several orange traffic cones marking the perimeter.''
+
+    '
+  prompt_sequence: 'Analyze the provided outdoor image (parking lot, garden, or patio)
+    to detect
+
+    cleaning or maintenance activities.
+
+
+    Return your response strictly as a single JSON object with the following keys:
+
+
+    - "activity_detected": (boolean) true if maintenance tools, cleaning equipment,
+
+    or active landscaping tasks are visible, false otherwise.
+
+
+    - "confidence": (float between 0 and 1) Your confidence level in the detection.
+
+
+    - "tools_found": (array of strings) List the specific items detected (e.g., ''leaf
+
+    blower'', ''pressure washer'', ''lawnmower'', ''rake'', ''industrial broom'',
+    ''hedge trimmer'',
+
+    ''maintenance cart'', ''traffic cones'').
+
+
+    - "describe": (string) A concise description of the activity, focusing exclusively
+
+    on the tools, equipment, and the state of the outdoor area.
+
+
+
+    STRICT PROHIBITIONS:
+
+
+    - DO NOT mention the identity, gender, age, ethnicity, or physical characteristics
+
+    of any individuals.
+
+
+    - DO NOT include any text, explanations, or markdown formatting outside of the
+
+    JSON block.
+
+
+    - Output ONLY the raw JSON.
+
+
+
+    Example of allowed description: ''A worker-operated leaf blower clearing a paved
+
+    parking area, with several orange traffic cones marking the perimeter.''
+
+    '
+- id: buffet_setup_detection
+  label: Buffet & Catering Detection
+  prompt_single: "Analyze the provided image to identify if a buffet counter or a\
+    \ table set up\nfor a meal (breakfast or lunch) is present.\n\nReturn your response\
+    \ strictly as a single JSON object with the following keys:\n\n- \"buffet_detected\"\
+    : (boolean) True ONLY if the counter features a professional-grade,\nhigh-density\
+    \ food setup. To be True, the following conditions must be met simultaneously:\n\
+    \  1. Multiple professional serving vessels are present (e.g., chafing dishes,\
+    \ tiered\n     risers, warming trays).\n  2. There is a clear variety of different\
+    \ food categories (e.g., savory, sweet,\n     fruits, beverages).\n  3. High spatial\
+    \ density, where the arrangement covers the vast majority (at least\n     70%)\
+    \ of the table or counter surface.\nSet to False if only isolated items are present\
+    \ (e.g., a single fruit bowl, a lone\ntray), a coffee station, or a dessert-only\
+    \ display.\n\n- \"confidence\": (float between 0 and 1) Your confidence level\
+    \ based on the presence\nof food and tableware.\n\n- \"items_found\": (array of\
+    \ strings) List the specific elements detected (e.g.,\n'food platters', 'trays',\
+    \ 'bottles', 'cutlery', 'plates', 'carafes', 'chafing dishes').\n\n- \"describe\"\
+    : (string) A concise description of the setup, focusing on the arrangement\nof\
+    \ food, beverages, and serving equipment.\n\n\nSTRICT PROHIBITIONS:\n\n- DO NOT\
+    \ mention any people present, their identity, or physical characteristics.\n\n\
+    - DO NOT include any text, explanations, or markdown formatting outside of the\n\
+    JSON block.\n\n- Output ONLY the raw JSON.\n\n\nExample of allowed description:\
+    \ 'A long table arranged with several stainless\nsteel warming trays, stacks of\
+    \ ceramic plates, and various glass bottles of water\nand juice.'\n"
+  prompt_sequence: "Analyze the provided image to identify if a buffet counter or\
+    \ a table set up\nfor a meal (breakfast or lunch) is present.\n\nReturn your response\
+    \ strictly as a single JSON object with the following keys:\n\n- \"buffet_detected\"\
+    : (boolean) True ONLY if the counter features a professional-grade,\nhigh-density\
+    \ food setup. To be True, the following conditions must be met simultaneously:\n\
+    \  1. Multiple professional serving vessels are present (e.g., chafing dishes,\
+    \ tiered\n     risers, warming trays).\n  2. There is a clear variety of different\
+    \ food categories (e.g., savory, sweet,\n     fruits, beverages).\n  3. High spatial\
+    \ density, where the arrangement covers the vast majority (at least\n     70%)\
+    \ of the table or counter surface.\nSet to False if only isolated items are present\
+    \ (e.g., a single fruit bowl, a lone\ntray), a coffee station, or a dessert-only\
+    \ display.\n\n- \"confidence\": (float between 0 and 1) Your confidence level\
+    \ based on the presence\nof food and tableware.\n\n- \"items_found\": (array of\
+    \ strings) List the specific elements detected (e.g.,\n'food platters', 'trays',\
+    \ 'bottles', 'cutlery', 'plates', 'carafes', 'chafing dishes').\n\n- \"describe\"\
+    : (string) A concise description of the setup, focusing on the arrangement\nof\
+    \ food, beverages, and serving equipment.\n\n\nSTRICT PROHIBITIONS:\n\n- DO NOT\
+    \ mention any people present, their identity, or physical characteristics.\n\n\
+    - DO NOT include any text, explanations, or markdown formatting outside of the\n\
+    JSON block.\n\n- Output ONLY the raw JSON.\n\n\nExample of allowed description:\
+    \ 'A long table arranged with several stainless\nsteel warming trays, stacks of\
+    \ ceramic plates, and various glass bottles of water\nand juice.'\n"
+- id: step1_test
+  label: Step1 Test
+  prompt_single: test prompt
+  prompt_sequence: test prompt
+- id: step1_dup
+  label: Dup
+  prompt_single: p
+  prompt_sequence: p
+- id: step1_put_test
+  label: New Label
+  prompt_single: new prompt
+  prompt_sequence: new prompt
+- id: step1_fields_test
+  label: Fields Test
+  prompt_single: p
+  prompt_sequence: p

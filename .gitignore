@@ -1,0 +1,22 @@
+# Environment
+.env
+.venv/
+venv/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+
+# Frames scaricati
+frame/
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*~
+*.md

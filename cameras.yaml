@@ -1,0 +1,124 @@
+cameras:
+- id: tc_kitchen
+  label: Kitchen Camera
+  base_url: http://10.46.67.5
+  channel: 1
+  resolution: 1280x720
+  compression: 30
+  rotation: 0
+  roi:
+  - - 252
+    - 717
+  - - 38
+    - 285
+  - - 306
+    - 147
+  - - 1264
+    - 298
+  - - 1130
+    - 719
+- id: tc_kitchen_cabinet
+  label: Kitchen Cabinet
+  base_url: http://10.46.67.5
+  channel: 1
+  resolution: 1280x720
+  compression: 30
+  rotation: 0
+  recording_diskid: SD_DISK
+  roi:
+  - - 333
+    - 462
+  - - 318
+    - 105
+  - - 698
+    - 86
+  - - 700
+    - 519
+- id: tc_lobby
+  label: Lobby Entrance
+  base_url: http://10.46.67.6
+  channel: 1
+  resolution: 1280x720
+  compression: 30
+  rotation: 0
+  roi:
+  - - 3
+    - 345
+  - - 230
+    - 151
+  - - 603
+    - 84
+  - - 1230
+    - 204
+  - - 1053
+    - 718
+  - - 161
+    - 718
+- id: tc_parking_01
+  label: Parking 01
+  base_url: http://10.46.67.10
+  channel: 2
+  resolution: 1280x720
+  compression: 30
+  rotation: 0
+  roi:
+  - - 162
+    - 620
+  - - 75
+    - 373
+  - - 329
+    - 12
+  - - 944
+    - 36
+  - - 1251
+    - 609
+  - - 1168
+    - 719
+  - - 242
+    - 719
+- id: tc_patio
+  label: Patio
+  base_url: http://10.46.67.10
+  channel: 4
+  resolution: 1280x720
+  compression: 30
+  rotation: 0
+  roi:
+  - - 283
+    - 718
+  - - 379
+    - 108
+  - - 813
+    - 130
+  - - 892
+    - 363
+  - - 888
+    - 717
+- id: step3_test_cam
+  label: Step3 Camera
+  base_url: http://10.0.0.99
+  channel: 1
+  resolution: 640x480
+  compression: 50
+  rotation: 0
+- id: step3_dup_cam
+  label: Dup
+  base_url: http://10.0.0.1
+  channel: 1
+  resolution: 1280x720
+  compression: 30
+  rotation: 0
+- id: step3_nocreds
+  label: NoCreds
+  base_url: http://10.0.0.2
+  channel: 1
+  resolution: 1280x720
+  compression: 30
+  rotation: 0
+- id: step3_put_cam
+  label: Updated
+  base_url: http://10.0.0.3
+  channel: 1
+  resolution: 1280x720
+  compression: 30
+  rotation: 0
