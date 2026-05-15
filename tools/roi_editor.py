@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import argparse
 import base64
+import logging
 import threading
 import webbrowser
 from io import BytesIO
@@ -25,11 +26,35 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse, JSONResponse
 from pydantic import BaseModel
 
+logging.basicConfig(
+    level=logging.DEBUG,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    datefmt="%H:%M:%S",
+)
+log = logging.getLogger("roi_editor")
+
 # ---------------------------------------------------------------------------
 # YAML helpers (standalone – non importa da app/)
 # ---------------------------------------------------------------------------
 ROOT = Path(__file__).parent.parent
 CAMERAS_YAML = ROOT / "cameras.yaml"
+
+# Legge AXIS_DEFAULT_USER / AXIS_DEFAULT_PASS da .env come fallback credentials,
+# replicando il comportamento di app/axis.py per le telecamere senza username in cameras.yaml.
+def _load_axis_defaults() -> tuple[str, str]:
+    env_path = ROOT / ".env"
+    _user, _pass = "root", ""
+    if env_path.exists():
+        for line in env_path.read_text().splitlines():
+            line = line.strip()
+            if line.startswith("AXIS_DEFAULT_USER="):
+                _user = line.split("=", 1)[1].strip()
+            elif line.startswith("AXIS_DEFAULT_PASS="):
+                _pass = line.split("=", 1)[1].strip()
+    log.debug("axis default credentials: user=%s", _user)
+    return _user, _pass
+
+_AXIS_DEFAULT_USER, _AXIS_DEFAULT_PASS = _load_axis_defaults()
 
 
 def _load_cameras() -> list[dict]:
@@ -56,26 +81,76 @@ def _find_camera(camera_id: str) -> dict:
 
 
 def _fetch_snapshot_sync(camera: dict) -> tuple[bytes, int, int]:
-    ch = camera.get("channel", 1)
-    res = camera.get("resolution", "1280x720")
-    comp = camera.get("compression", 30)
-    rot = camera.get("rotation", 0)
+    cam_id = camera.get("id", "?")
+    ch     = camera.get("channel", 1)
+    res    = camera.get("resolution", "1280x720")
+    comp   = camera.get("compression", 30)
+    rot    = camera.get("rotation", 0)
+    user   = camera.get("username") or _AXIS_DEFAULT_USER
+    passwd = camera.get("password") or _AXIS_DEFAULT_PASS
+    base   = camera.get("base_url", "")
+
     url = (
-        f"{camera['base_url']}/axis-cgi/jpg/image.cgi"
+        f"{base}/axis-cgi/jpg/image.cgi"
         f"?camera={ch}&resolution={res}&compression={comp}"
     )
     if rot:
         url += f"&rotation={rot}"
 
-    resp = httpx.get(
-        url,
-        auth=httpx.DigestAuth(camera.get("username", "root"), camera.get("password", "")),
-        timeout=5.0,
-    )
+    log.debug("[%s] snapshot URL: %s", cam_id, url)
+    log.debug("[%s] auth user: %s (da %s) | channel: %s | resolution: %s | compression: %s | rotation: %s",
+              cam_id, user,
+              "cameras.yaml" if camera.get("username") else ".env default",
+              ch, res, comp, rot)
+
+    try:
+        resp = httpx.get(
+            url,
+            auth=httpx.DigestAuth(user, passwd),
+            timeout=5.0,
+        )
+    except httpx.ConnectTimeout:
+        log.error("[%s] CONNECT TIMEOUT dopo 5s — host raggiungibile? URL: %s", cam_id, url)
+        raise
+    except httpx.ReadTimeout:
+        log.error("[%s] READ TIMEOUT — connessione aperta ma nessun dato entro 5s. URL: %s", cam_id, url)
+        raise
+    except httpx.ConnectError as e:
+        log.error("[%s] CONNECT ERROR — %s. URL: %s", cam_id, e, url)
+        raise
+    except httpx.RequestError as e:
+        log.error("[%s] REQUEST ERROR — %s (%s). URL: %s", cam_id, type(e).__name__, e, url)
+        raise
+
+    log.debug("[%s] HTTP %s — Content-Type: %s — Content-Length: %s bytes",
+              cam_id, resp.status_code,
+              resp.headers.get("content-type", "n/d"),
+              len(resp.content))
+
+    if resp.status_code == 401:
+        log.error("[%s] HTTP 401 Unauthorized — credenziali errate o digest auth fallita. user=%s", cam_id, user)
+    elif resp.status_code == 403:
+        log.error("[%s] HTTP 403 Forbidden — utente autenticato ma senza permessi snapshot.", cam_id)
+    elif resp.status_code >= 400:
+        log.error("[%s] HTTP %s — risposta: %s", cam_id, resp.status_code, resp.text[:300])
+
     resp.raise_for_status()
+
+    ct = resp.headers.get("content-type", "")
+    if "image" not in ct:
+        log.warning("[%s] Content-Type inatteso: %r (atteso image/jpeg). "
+                    "Prime 200 char della risposta: %s", cam_id, ct, resp.text[:200])
+
     from PIL import Image  # lazy import
-    img = Image.open(BytesIO(resp.content))
-    w, h = img.size
+    try:
+        img = Image.open(BytesIO(resp.content))
+        w, h = img.size
+    except Exception as e:
+        log.error("[%s] Impossibile decodificare l'immagine ricevuta (%d bytes): %s",
+                  cam_id, len(resp.content), e)
+        raise
+
+    log.info("[%s] snapshot OK — %dx%d px — %d bytes", cam_id, w, h, len(resp.content))
     return resp.content, w, h
 
 
@@ -382,15 +457,24 @@ async def api_cameras():
 
 @editor.get("/api/snapshot/{camera_id}")
 async def api_snapshot(camera_id: str):
+    log.info("[%s] richiesta snapshot", camera_id)
     camera = _find_camera(camera_id)
+    log.debug("[%s] config camera: base_url=%s label=%s",
+              camera_id, camera.get("base_url"), camera.get("label"))
     try:
         raw, w, h = _fetch_snapshot_sync(camera)
-    except httpx.TimeoutException:
+    except httpx.TimeoutException as e:
+        log.error("[%s] timeout: %s", camera_id, e)
         raise HTTPException(502, f"Timeout connecting to camera '{camera_id}'")
     except httpx.HTTPStatusError as e:
+        log.error("[%s] HTTP error %s dalla camera", camera_id, e.response.status_code)
         raise HTTPException(502, f"Camera returned HTTP {e.response.status_code}")
     except httpx.RequestError as e:
+        log.error("[%s] network error: %s", camera_id, e)
         raise HTTPException(502, f"Camera unreachable: {e}")
+    except Exception as e:
+        log.exception("[%s] errore imprevisto nel fetch snapshot: %s", camera_id, e)
+        raise HTTPException(500, f"Internal error: {e}")
     return JSONResponse({"b64": base64.b64encode(raw).decode(), "width": w, "height": h})
 
 
@@ -450,7 +534,7 @@ def main():
         threading.Timer(1.2, lambda: webbrowser.open(url)).start()
 
     print(f"ROI Editor → {url}")
-    uvicorn.run(editor, host="127.0.0.1", port=args.port, log_level="warning")
+    uvicorn.run(editor, host="127.0.0.1", port=args.port, log_level="info")
 
 
 if __name__ == "__main__":

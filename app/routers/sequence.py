@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import time
+from contextlib import nullcontext
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
@@ -15,6 +16,7 @@ from app.axis import (
     fetch_mjpeg_frames,
 )
 from app.config import get_settings, load_cameras, load_sequences, save_sequences
+from app.telemetry import get_tracer
 from app.vision import ImageTooLargeError, analyze, analyze_sequence_final
 
 router = APIRouter(prefix="/sequence", tags=["sequence"])
@@ -162,6 +164,7 @@ async def run_sequence(
 ):
     t_start = time.monotonic()
     now = datetime.now(timezone.utc)
+    session_id = f"{camera_id}__{sequence_id}__{now.strftime('%Y%m%d-%H%M%S')}"
 
     if at is not None:
         at_utc = at.replace(tzinfo=timezone.utc) if at.tzinfo is None else at
@@ -236,51 +239,64 @@ async def run_sequence(
     else:
         base_ts = now - timedelta(seconds=window_before_s + window_after_s)
 
-    chunk_results_raw: list[dict] = []
-    chunk_results_out: list[ChunkResult] = []
+    tracer = get_tracer()
+    span_ctx = tracer.start_as_current_span(
+        f"sequence {camera_id}/{sequence_id}",
+        attributes={
+            "session.id":      session_id,
+            "camera.id":       camera_id,
+            "sequence.id":     sequence_id,
+            "sequence.chunks": total_chunks,
+            "llm.source":      source,
+        },
+    ) if tracer else nullcontext()
 
-    for idx, chunk_frames in enumerate(chunks):
-        frame_start   = idx * frames_per_chunk
-        frame_end     = frame_start + len(chunk_frames) - 1
-        t_chunk_start = base_ts + timedelta(seconds=frame_start * frame_interval_s)
-        t_chunk_end   = base_ts + timedelta(seconds=frame_end   * frame_interval_s)
+    with span_ctx:
+        chunk_results_raw: list[dict] = []
+        chunk_results_out: list[ChunkResult] = []
 
-        contextual_prompt = (
-            chunk_prompt
-            .replace("{chunk_index}", str(idx + 1))
-            .replace("{total_chunks}", str(total_chunks))
-        )
+        for idx, chunk_frames in enumerate(chunks):
+            frame_start   = idx * frames_per_chunk
+            frame_end     = frame_start + len(chunk_frames) - 1
+            t_chunk_start = base_ts + timedelta(seconds=frame_start * frame_interval_s)
+            t_chunk_end   = base_ts + timedelta(seconds=frame_end   * frame_interval_s)
 
+            contextual_prompt = (
+                chunk_prompt
+                .replace("{chunk_index}", str(idx + 1))
+                .replace("{total_chunks}", str(total_chunks))
+            )
+
+            try:
+                result = await analyze(chunk_frames, contextual_prompt)
+            except ImageTooLargeError as e:
+                raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
+            except ValueError as e:
+                raise HTTPException(
+                    status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail=f"LLM parse error on chunk {idx}: {e}",
+                )
+
+            chunk_results_raw.append(result)
+            chunk_results_out.append(ChunkResult(
+                chunk_index=idx,
+                frame_start=frame_start,
+                frame_end=frame_end,
+                time_start=t_chunk_start.isoformat(),
+                time_end=t_chunk_end.isoformat(),
+                result=result,
+            ))
+
+        # ── FASE 3: sintesi finale ─────────────────────────────────────────────
         try:
-            result = await analyze(chunk_frames, contextual_prompt)
-        except ImageTooLargeError as e:
-            raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
+            final_result = await analyze_sequence_final(
+                chunk_results_raw, final_prompt, batch_duration_s=chunk_duration_s
+            )
         except ValueError as e:
             raise HTTPException(
                 status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail=f"LLM parse error on chunk {idx}: {e}",
+                detail=f"Final synthesis parse error: {e}",
             )
-
-        chunk_results_raw.append(result)
-        chunk_results_out.append(ChunkResult(
-            chunk_index=idx,
-            frame_start=frame_start,
-            frame_end=frame_end,
-            time_start=t_chunk_start.isoformat(),
-            time_end=t_chunk_end.isoformat(),
-            result=result,
-        ))
-
-    # ── FASE 3: sintesi finale ─────────────────────────────────────────────
-    try:
-        final_result = await analyze_sequence_final(
-            chunk_results_raw, final_prompt, batch_duration_s=chunk_duration_s
-        )
-    except ValueError as e:
-        raise HTTPException(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=f"Final synthesis parse error: {e}",
-        )
 
     s = get_settings()
     processing_ms = int((time.monotonic() - t_start) * 1000)

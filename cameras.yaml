@@ -94,31 +94,19 @@ cameras:
     - 363
   - - 888
     - 717
-- id: step3_test_cam
-  label: Step3 Camera
-  base_url: http://10.0.0.99
-  channel: 1
-  resolution: 640x480
-  compression: 50
-  rotation: 0
-- id: step3_dup_cam
-  label: Dup
-  base_url: http://10.0.0.1
+- id: tc_lockers
+  label: Lockers
+  base_url: http://10.46.67.8
   channel: 1
   resolution: 1280x720
   compression: 30
   rotation: 0
-- id: step3_nocreds
-  label: NoCreds
-  base_url: http://10.0.0.2
-  channel: 1
-  resolution: 1280x720
-  compression: 30
-  rotation: 0
-- id: step3_put_cam
-  label: Updated
-  base_url: http://10.0.0.3
-  channel: 1
-  resolution: 1280x720
-  compression: 30
-  rotation: 0
+  roi:
+  - - 655
+    - 719
+  - - 656
+    - 113
+  - - 1278
+    - 113
+  - - 1275
+    - 718

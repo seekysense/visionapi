@@ -1,7 +1,9 @@
 from fastapi import FastAPI
 from fastapi.openapi.utils import get_openapi
 
+from app.config import get_settings
 from app.routers import actions, analyze, cameras, frame, sequence
+from app.telemetry import setup_phoenix
 
 app = FastAPI(
     title="VisionAPISmart",
@@ -16,6 +18,12 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc",
 )
+
+@app.on_event("startup")
+async def _startup() -> None:
+    s = get_settings()
+    setup_phoenix(s.phoenix_url, s.phoenix_api_key)
+
 
 app.include_router(cameras.router)
 app.include_router(actions.router)

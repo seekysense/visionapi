@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from contextlib import nullcontext
 from datetime import datetime, timedelta, timezone
 from typing import Literal, Optional
 
@@ -15,6 +16,7 @@ from app.axis import (
     fetch_snapshot,
 )
 from app.config import get_settings, load_actions, load_cameras
+from app.telemetry import get_tracer
 from app.vision import ImageTooLargeError, analyze
 
 router = APIRouter(prefix="/analyze", tags=["analyze"])
@@ -71,6 +73,7 @@ async def analyze_camera(
     _: str = Depends(require_api_key),
 ):
     now = datetime.now(timezone.utc)
+    session_id = f"{camera_id}__{action_id}__{now.strftime('%Y%m%d-%H%M%S')}"
 
     if at is not None:
         at_utc = at.replace(tzinfo=timezone.utc) if at.tzinfo is None else at
@@ -125,15 +128,28 @@ async def analyze_camera(
 
     prompt = action["prompt_sequence"] if mode == "sequence" else action["prompt_single"]
 
-    try:
-        result = await analyze(frames, prompt)
-    except ImageTooLargeError as e:
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
-    except ValueError as e:
-        raise HTTPException(
-            status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=f"LLM response not parseable as JSON: {e}",
-        )
+    tracer = get_tracer()
+    span_ctx = tracer.start_as_current_span(
+        f"analyze {camera_id}/{action_id}",
+        attributes={
+            "session.id":  session_id,
+            "camera.id":   camera_id,
+            "action.id":   action_id,
+            "llm.mode":    mode,
+            "llm.source":  "live" if at is None else "recording",
+        },
+    ) if tracer else nullcontext()
+
+    with span_ctx:
+        try:
+            result = await analyze(frames, prompt)
+        except ImageTooLargeError as e:
+            raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
+        except ValueError as e:
+            raise HTTPException(
+                status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=f"LLM response not parseable as JSON: {e}",
+            )
 
     s = get_settings()
     return AnalyzeResponse(

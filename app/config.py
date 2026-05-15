@@ -25,6 +25,10 @@ class Settings(BaseSettings):
     axis_default_user: str = "root"
     axis_default_pass: str = ""
 
+    # Arize Phoenix — se PHOENIX_URL è vuoto il tracing è disabilitato
+    phoenix_url: str = ""
+    phoenix_api_key: str = ""
+
 
 @lru_cache
 def get_settings() -> Settings:

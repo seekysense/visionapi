@@ -2,8 +2,8 @@ sequences:
 - id: cabinet_access_detection
   label: Cabinet Access & Item Removal Detection
   fps: 2
-  window_before_s: 15
-  window_after_s: 15
+  window_before_s: 4
+  window_after_s: 40
   frames_per_chunk: 8
   output_type: json
   chunk_prompt: "You are analyzing a batch of sequential frames from a security camera\n\
@@ -37,12 +37,77 @@ sequences:
     confidence: float
     evidence: string
     verdict: string
-- id: step6_test_seq
-  label: Test Seq
-  fps: 1.0
-  window_before_s: 5
-  window_after_s: 5
-  frames_per_chunk: 4
-  chunk_prompt: Analyze these frames.
-  final_prompt: 'Summarize: {chunk_results}'
+- id: lockers_access_detection
+  label: Lockers Access & Item Detection (top-down)
+  fps: 2
+  window_before_s: 4
+  window_after_s: 40
+  frames_per_chunk: 8
   output_type: json
+  chunk_prompt: |
+    You are analyzing a batch of sequential frames from a top-down security camera
+    mounted directly above a row of lockers. The camera looks straight down, so locker
+    doors are never seen frontally. When a locker door opens, it appears in the frame
+    as a rectangular panel or flap rotating or swinging outward from the locker body,
+    exposing the dark interior compartment below. A closed locker shows only the uniform
+    top surface of the locker unit.
+    [Batch {chunk_index} of {total_chunks}]
+
+    Determine for this batch:
+    1. Is any locker door/panel visible as open from above? (Look for a panel displaced
+       from the locker surface, a visible dark interior cavity, or a door flap in motion.)
+    2. Is a person visible from above directly over or immediately adjacent to a locker
+       compartment? (Body, shoulders, arms or hands seen from above count.)
+    3. Is any object being moved into or out of a locker compartment?
+    4. If an object interaction is visible, what type does it most resemble?
+       Choose strictly from: "cuscino", "coperta", "accappatoio", "spazzola",
+       "calzascarpe", "altro_oggetto_piccolo". Use null if no object is visible or
+       if the interaction cannot be confirmed.
+
+    Return ONLY a raw JSON object with these exact keys:
+    {
+      "door_open": "yes" or "no",
+      "person_over_locker": "yes" or "no",
+      "item_interaction": "yes" or "no",
+      "item_type": "<one of the allowed values>" or null,
+      "confidence": <float 0.0-1.0>,
+      "notes": "<brief observation describing what was seen from above, max 1 sentence>"
+    }
+  final_prompt: |
+    You are given the analysis results from multiple sequential frame batches covering
+    a window around a specific moment in time. Each batch covers approximately
+    {batch_duration_s} seconds of footage from a top-down camera monitoring lockers.
+
+    Batch results (JSON array, chronological order):
+    {chunk_results}
+
+    RULES (apply strictly, prefer false positives over false negatives):
+    1. If ANY single batch has door_open="yes" AND person_over_locker="yes" AND
+       item_interaction="yes", set locker_accessed=true, item_interaction=true and
+       verdict="CONFIRMED_ACCESS" regardless of other batches.
+    2. If ANY batch has door_open="yes" AND person_over_locker="yes" (even if
+       item_interaction="no"), set locker_accessed=true and verdict="SUSPICIOUS".
+    3. Only set verdict="CLEAR" if NO batch has door_open="yes" combined with
+       person_over_locker="yes".
+    4. For item_type: report the most specific item type observed across all batches.
+       If multiple types appear across batches, report the one with the highest
+       individual confidence. Use null if no item interaction was detected in any batch.
+
+    Return ONLY a raw JSON object:
+    {
+      "locker_accessed": true or false,
+      "item_interaction": true or false,
+      "person_visible": true or false,
+      "item_type": "<one of: cuscino, coperta, accappatoio, spazzola, calzascarpe, altro_oggetto_piccolo>" or null,
+      "confidence": <float 0.0-1.0>,
+      "evidence": "<summary of key observations from above, quote the triggering batch index>",
+      "verdict": "CLEAR" or "SUSPICIOUS" or "CONFIRMED_ACCESS"
+    }
+  output_schema:
+    locker_accessed: boolean
+    item_interaction: boolean
+    person_visible: boolean
+    item_type: string
+    confidence: float
+    evidence: string
+    verdict: string

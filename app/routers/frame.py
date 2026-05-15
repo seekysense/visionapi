@@ -10,7 +10,7 @@ import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import Response, StreamingResponse
 
-from app.auth import require_api_key
+from app.auth import require_admin_key
 from app.axis import check_recording_exists, fetch_recording_frame, fetch_snapshot
 from app.config import load_cameras
 
@@ -39,7 +39,7 @@ async def get_frame(
     ),
     resolution: Optional[str] = Query(None),
     compression: Optional[int] = Query(None, ge=0, le=100),
-    _: str = Depends(require_api_key),
+    _: str = Depends(require_admin_key),
 ):
     cameras = load_cameras()
     camera = next((c for c in cameras if c["id"] == camera_id), None)
@@ -88,7 +88,7 @@ async def get_frame(
 async def get_all_frames(
     resolution: Optional[str] = Query(None),
     compression: Optional[int] = Query(None, ge=0, le=100),
-    _: str = Depends(require_api_key),
+    _: str = Depends(require_admin_key),
 ):
     cameras = load_cameras()
     if not cameras:
