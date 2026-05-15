@@ -471,19 +471,152 @@ actions:
     JSON block.\n\n- Output ONLY the raw JSON.\n\n\nExample of allowed description:\
     \ 'A long table arranged with several stainless\nsteel warming trays, stacks of\
     \ ceramic plates, and various glass bottles of water\nand juice.'\n"
-- id: step1_test
-  label: Step1 Test
-  prompt_single: test prompt
-  prompt_sequence: test prompt
-- id: step1_dup
-  label: Dup
-  prompt_single: p
-  prompt_sequence: p
-- id: step1_put_test
-  label: New Label
-  prompt_single: new prompt
-  prompt_sequence: new prompt
-- id: step1_fields_test
-  label: Fields Test
-  prompt_single: p
-  prompt_sequence: p
+- id: dog_detection
+  label: Dog Detection
+  prompt_single: |
+    Analyze the provided image to detect the presence of a dog.
+
+    A dog is considered DETECTED if any of the following are clearly visible in the frame:
+    the full body, one or more paws, or the snout. Ambiguous or extremely partial views
+    (e.g., only a tail tip or an indistinct blurred shape) do NOT qualify as a detection.
+
+    Return your response strictly as a single JSON object with the following keys:
+
+    - "dog_detected": (boolean) true if a dog is clearly visible (full body, paws, or snout),
+      false otherwise.
+
+    - "confidence": (float between 0 and 1) Your reliability index for the detection.
+      Reflect genuine uncertainty: use values above 0.85 only when the evidence is unambiguous.
+      Use values below 0.5 only when the evidence is genuinely insufficient to decide.
+
+    - "visibility": (string) Which part of the dog is visible. Use exactly one of:
+      "full_body", "partial_body", "paws_only", "snout_only", "not_visible".
+
+    - "color": (string or null) The primary coat color(s) observed (e.g., "black",
+      "golden", "white and brown", "grey brindle"). Set to null if no dog is detected.
+
+    - "estimated_size": (string or null) The estimated size category inferred from body
+      proportions relative to surrounding objects or persons:
+        "small"  — toy or small breeds (e.g., Chihuahua, Dachshund, French Bulldog)
+        "medium" — medium breeds (e.g., Border Collie, Labrador, Beagle)
+        "large"  — large or giant breeds (e.g., German Shepherd, Great Dane, Mastiff)
+      Set to null if no dog is detected or size cannot be reliably estimated.
+
+    - "near_person": (boolean or null) true if the dog is visibly close to or in physical
+      contact with a person in the frame; false if the dog appears alone with no person
+      nearby; null if no dog is detected.
+
+    - "describe": (string) A detailed description of the dog and its context. Include:
+      coat color, estimated size, which body parts are visible, posture (e.g., "sitting",
+      "walking", "lying down", "jumping"), and proximity to any person. If no dog is
+      detected, explicitly state the scene is clear of dogs.
+
+
+    STRICT PROHIBITIONS:
+
+    - DO NOT mention the identity, gender, age, ethnicity, or physical characteristics
+      of any people present.
+
+    - DO NOT include any text, explanations, or markdown formatting outside of the
+      JSON block.
+
+    - Output ONLY the raw JSON.
+
+
+    Example output (dog detected):
+    {
+      "dog_detected": true,
+      "confidence": 0.93,
+      "visibility": "full_body",
+      "color": "golden",
+      "estimated_size": "medium",
+      "near_person": true,
+      "describe": "A medium-sized golden-coated dog, consistent with a Labrador Retriever build, is standing on the floor with full body visible. The dog appears calm and is positioned directly beside a person, in close physical proximity to their legs."
+    }
+
+    Example output (no dog):
+    {
+      "dog_detected": false,
+      "confidence": 0.97,
+      "visibility": "not_visible",
+      "color": null,
+      "estimated_size": null,
+      "near_person": null,
+      "describe": "No dog is visible in the frame. The scene is clear of any canine presence."
+    }
+  prompt_sequence: |
+    Analyze the provided sequence of frames (in chronological order) to detect the presence
+    of a dog at any point during the sequence.
+
+    A dog is considered DETECTED if any of the following are clearly visible in AT LEAST
+    ONE frame: the full body, one or more paws, or the snout. Ambiguous or extremely partial
+    views (e.g., only a tail tip or an indistinct blurred shape) do NOT qualify.
+
+    Base your detection on the BEST evidence frame across the entire sequence.
+
+    Return your response strictly as a single JSON object with the following keys:
+
+    - "dog_detected": (boolean) true if a dog is clearly visible in at least one frame,
+      false otherwise.
+
+    - "confidence": (float between 0 and 1) Your reliability index based on the clearest
+      evidence frame. Reflect genuine uncertainty: use values above 0.85 only when the
+      evidence is unambiguous. Use values below 0.5 only when evidence is genuinely insufficient.
+
+    - "visibility": (string) The best visibility achieved across all frames. Use exactly
+      one of: "full_body", "partial_body", "paws_only", "snout_only", "not_visible".
+
+    - "color": (string or null) The primary coat color(s) observed in the clearest frame
+      (e.g., "black", "golden", "white and brown", "grey brindle"). Set to null if no
+      dog is detected.
+
+    - "estimated_size": (string or null) The estimated size category inferred from body
+      proportions relative to surrounding objects or persons:
+        "small"  — toy or small breeds (e.g., Chihuahua, Dachshund, French Bulldog)
+        "medium" — medium breeds (e.g., Border Collie, Labrador, Beagle)
+        "large"  — large or giant breeds (e.g., German Shepherd, Great Dane, Mastiff)
+      Set to null if no dog is detected or size cannot be reliably estimated.
+
+    - "near_person": (boolean or null) true if the dog is visibly close to or in physical
+      contact with a person in any frame; false if the dog appears alone with no person
+      nearby in all frames where it is visible; null if no dog is detected.
+
+    - "describe": (string) A detailed description of the dog and its context based on the
+      clearest frame(s). Include: coat color, estimated size, which body parts are visible,
+      posture (e.g., "sitting", "walking", "lying down", "jumping"), movement observed
+      across the sequence if applicable, and proximity to any person. If no dog is
+      detected in any frame, explicitly state the scene is clear of dogs.
+
+
+    STRICT PROHIBITIONS:
+
+    - DO NOT mention the identity, gender, age, ethnicity, or physical characteristics
+      of any people present.
+
+    - DO NOT include any text, explanations, or markdown formatting outside of the
+      JSON block.
+
+    - Output ONLY the raw JSON.
+
+
+    Example output (dog detected):
+    {
+      "dog_detected": true,
+      "confidence": 0.91,
+      "visibility": "full_body",
+      "color": "black and white",
+      "estimated_size": "medium",
+      "near_person": false,
+      "describe": "A medium-sized black and white dog, consistent with a Border Collie build, is visible across frames 2 through 4 walking across the scene. Full body is clearly visible. The dog moves from left to right and no person is present in any frame."
+    }
+
+    Example output (no dog):
+    {
+      "dog_detected": false,
+      "confidence": 0.96,
+      "visibility": "not_visible",
+      "color": null,
+      "estimated_size": null,
+      "near_person": null,
+      "describe": "No dog is visible in any frame of the sequence. The scene is clear of any canine presence."
+    }
