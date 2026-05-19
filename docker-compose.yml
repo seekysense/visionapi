@@ -11,7 +11,9 @@ services:
     env_file:
       - .env
     volumes:
-      # Mutable data files mounted from host for CRUD persistence across restarts
+      # Mutable data files mounted from host for CRUD persistence across restarts.
+      # The entrypoint.sh runs as root and chowns these to appuser (UID 1001) at
+      # startup so the API can write them regardless of the host file ownership.
       - ./cameras.yaml:/app/cameras.yaml
       - ./actions.yaml:/app/actions.yaml
       - ./sequences.yaml:/app/sequences.yaml
